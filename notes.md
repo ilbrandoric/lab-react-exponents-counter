@@ -8,6 +8,69 @@ npm run dev
 ```
 ---
 
+## What is lifting the state?
+
+*Analogy*: Think of a family sharing one TV remote 📺.
+
+The problem
+
+You have two siblings (components).
+Both need to know and change the TV channel (state).
+
+If each sibling keeps their own remote, they’ll get out of sync:
+
+One changes the channel the other doesn’t know about it.
+
+That’s exactly what happens when multiple React components keep their own copy of the same state.
+
+The solution: lift the state
+
+You move the remote to the parent.
+The parent component owns the state
+
+The children ask the parent:
+
+“What’s the current channel?”
+“Please change the channel to 5”
+
+In React terms:
+
+State lives higher up
+Data flows down as props
+
+Changes flow up via functions
+That’s lifting state up.
+
+Very concrete React picture
+
+❌ Each child has useState(count)
+
+✅ Parent has useState(count)
+
+Parent passes:
+
+count → to children
+setCount → to children
+
+Now everyone is in sync.
+
+One-sentence definition
+
+Lifting state means:
+
+Move shared state to the closest common parent so multiple components can stay in sync.
+
+When should you do it?
+
+Lift state only when:
+
+Two or more components need the same data
+One component’s change should affect another
+
+If not → keep state local.
+
+---
+
 ## Capture data
 
 ### Single handler for all changes
