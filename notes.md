@@ -8,6 +8,44 @@ npm run dev
 ```
 ---
 
+## Create a state for the exponent 
+
+const [exponent, setExponent] = useState(2);
+
+## Pass props
+
+Pass exponent as a prop to all Exponent components
+
+<ExponentTwo exponent={exponent} />
+<ExponentThree exponent={exponent} />
+<ExponentFour exponent={exponent} />
+<ExponentFive exponent={exponent} />
+<ExponentSix exponent={exponent} />
+
+
+In plain terms: This code passes data (exponent) from App.jsx to multiple child components.
+From parent (App.jsx) - to -> child components <Exponent2, 3, 4, 5>
+
+ExponentTwo   ← exponent = 2
+ExponentThree← exponent = 2
+ExponentFour ← exponent = 2
+ExponentFive ← exponent = 2
+ExponentSix  ← exponent = 2
+
+Each component:
+
+Receives the same input
+
+Applies a different transformation
+
+Produces a different result
+
+This is classic functional thinking:
+
+same input → different outputs
+
+
+
 ## What is lifting the state?
 
 *Analogy*: Think of a family sharing one TV remote 📺.
@@ -45,7 +83,7 @@ Very concrete React picture
 
 ❌ Each child has useState(count)
 
-✅ Parent has useState(count)
+✅ Parent (App.jsx) has useState(count)
 
 Parent passes:
 
@@ -71,381 +109,165 @@ If not → keep state local.
 
 ---
 
-## Capture data
+## How this works in practice?
 
-### Single handler for all changes
 
-Big picture (one sentence)
+What “lifting state” means (in plain terms)
 
-One function listens to all inputs and decides which piece of state to update by reading the input’s name.
+Lifting state means:
 
-That’s it.
+You move state up to the closest common parent so that multiple components can share and stay in sync with the same data.
 
-## App.jsx structure:
+In your case:
 
-```jsx
-<label>
-  Full Name
-  <input
-    name="fullName"
-    type="text"
-    placeholder="Full Name"
-    onChange={handleChange}
-  />
-</label>
+Counter needs to change the number
 
-<label>
-  Profile Image
-  <input
-    name="image"
-    type="url"
-    placeholder="Profile Image"
-    onChange={handleChange}
-  />
-</label>
-```
+Exponent* components need to read the same number
 
-## **SINGLE** handler for **ALL** changes:
+Therefore, the state must live above all of them
 
-```js
-const handleChange = (e) => {
-  const { name, value, type, checked } = e.target;
+That place is App.jsx.
 
-  if (type === "checkbox") {
-    setGraduated(checked);
-    return;
-  }
+Before lifting (the problem)
 
-  if (name === "fullName") {
-    setFullName(value);
-  } else if (name === "image") {
-    setImage(value);
-  } else if (name === "phone") {
-    setPhone(value);
-  } else if (name === "email") {
-    setEmail(value);
-  } else if (name === "program") {
-    setProgram(value);
-  } else if (name === "graduationYear") {
-    setGraduationYear(Number(value));
-  }
-};
-```
+Originally, the situation looks like this conceptually:
 
-Line-by-line, in plain English
+Counter.jsx has its own useState
 
-### 1️⃣ This function runs every time any input changes
+ExponentTwo, ExponentThree, etc. have hard-coded values
 
-User types:
-
-Full Name  
-```jsx
-<input
-  name="fullName"
-  type="text"
-/>
-```
-
-User clicks checkbox:
-
-Graduated  
-```jsx
-<input name="graduated" type="checkbox" />
-```
-
-User selects option  
-
-➡️ React calls `handleChange`
-
----
-
-### 2️⃣ We pull useful info from the input that changed
-
-```js
-const { name, value, type, checked } = e.target;
-```
-
-Think of `e.target` as:  
-**“The input that was just touched”**
-
-`e.target` is the exact HTML element that triggered the event.
-
-```jsx
-<input
-  name="fullName"
-  type="text"
-  placeholder="Full Name"
-  onChange={handleChange}
-/>
-```
-
-```js
-e = {
-  target: <input ... />
-}
-```
-
-`e.target ===` the input element the user just interacted with.
-
-From it we read:
-
-- `name` → which input is this? (for example: phone number)
-- `value` → what did the user type/select?
-- `type` → what kind of input is it?
-- `checked` → true / false (only for checkboxes)
-
-So when you write:
-
-```js
-const { name, value } = e.target;
-```
-
-You’re literally reading attributes and state of that input.
-
----
-
-## How to read this in human terms
-
-```js
-const { name, value, type, checked } = e.target;
-```
-
-Read as:
-
-From `e.target`, create constants called `name`, `value`, `type`, and `checked` using the values from the input.
-
-Equivalent to:
-
-```js
-const name = e.target.name;
-const value = e.target.value;
-const type = e.target.type;
-const checked = e.target.checked;
-```
-
----
-
-### 3️⃣ Handle the special case first: checkbox
-
-```js
-if (type === "checkbox") {
-  setGraduated(checked);
-  return;
-}
-```
+When the counter changes, exponents do not update
 
 Why?
 
-- Checkboxes don’t use `value`
-- They use `checked` (`true / false`)
+Each component is isolated
 
-So:
+There is no shared source of truth
 
-- If the changed input is a checkbox
-- Update `graduated`
-- Stop the function (`return`)
+React does not allow sibling components to directly share state.
 
----
+Step 1 — Move the state to App.jsx (the “lift”)
 
-### 4️⃣ For everything else, look at the name
+You created the state once, in the parent:
 
-```js
-if (name === "fullName") {
-  setFullName(value);
-}
-```
+const [exponent, setExponent] = useState(2);
 
-Translation:
 
-“If the input that changed is the full name field, update the `fullName` state with what the user typed.”
+Now:
 
----
+App owns the data
 
-### 5️⃣ Same logic, different fields
+There is exactly one source of truth
 
-```js
-else if (name === "image") {
-  setImage(value);
-}
-```
+All children depend on App
 
-“If the input is the image field, update the image state.”
+This is the key moment where the state is “lifted”.
 
-Same pattern repeats:
+Step 2 — Pass state down as props (read access)
 
-- input `name`
-- matching `setState`
+You passed exponent to every component that needs to read it:
 
----
+<Counter exponent={exponent} setExponent={setExponent} />
 
-### 6️⃣ Numbers need one extra step
+<ExponentTwo exponent={exponent} />
+<ExponentThree exponent={exponent} />
+<ExponentFour exponent={exponent} />
+<ExponentFive exponent={exponent} />
+<ExponentSix exponent={exponent} />
 
-```js
-else if (name === "graduationYear") {
-  setGraduationYear(Number(value));
-}
-```
 
-Why?
+Important rule:
 
-User types `2025`  
-Browser gives `"2025"` (string)  
-You convert it to `2025` (number)
+Data flows down
 
----
+Children cannot “reach up” to get state
 
-## Final takeaway (write this down)
+So the parent hands it down explicitly.
 
-Inputs identify themselves using **`name`**.  
-`handleChange` reads that name and updates the matching state.
+Step 3 — Pass the setter down only where mutation is needed
+
+Only Counter is allowed to change the value, so it receives:
+
+setExponent={setExponent}
+
+
+This is intentional:
+
+Exponent components are pure display
+
+Counter is the controller
+
+This keeps responsibilities clean.
 
 ---
 
-## Submit data
-
-Big picture (one sentence)
-
-When the form is submitted, we stop the page from reloading, bundle up the form data, and add it to the list of students.
-
----
-
-Line-by-line explanation
-
-### 1️⃣ This function runs when the form is submitted
-
-```js
-const handleSubmit = (e) => {
-  e.preventDefault();
-
-  const newStudent = {
-    fullName,
-    image,
-    phone,
-    email,
-    program,
-    graduationYear,
-    graduated,
-  };
+```mermaid
+flowchart TB
+	App[App.jsx]\nstate: exponent\nsetter: setExponent
+	Counter[Counter.jsx]\nprops: exponent, setExponent
+	App -->|passes exponent| Counter
+	Counter -->|invokes setExponent| App
 ```
 
-The user clicks “Add Student”  
-The browser says: “A form was submitted”  
-React calls `handleSubmit`
+Step 4 — Use the setter inside Counter.jsx
 
----
+Inside Counter, you do not create state.
 
-### 2️⃣ Stop the page from refreshing
+Instead, you receive it:
 
-```js
-e.preventDefault();
-```
+const Counter = ({ exponent, setExponent }) => {
 
-Normally, submitting a form:
 
-- reloads the page
-- wipes your data
+And modify it like this:
 
-This line says:
+const decrement = () => setExponent(prev => prev - 1);
+const increment = () => setExponent(prev => prev + 1);
 
-“Don’t do that. Stay on this page.”
 
----
+Key points:
 
-### 3️⃣ Create a new student record
+Counter does not own the state
 
-```js
-const newStudent = {
-  fullName,
-  image,
-  phone,
-  email,
-  program,
-  graduationYear,
-  graduated,
-};
-```
+It only requests updates
 
-This means:
+App decides the new value
 
-“Take everything the user typed (which is already stored in state) and group it into one object.”
+This is why React stays predictable.
 
-So `newStudent` becomes something like:
+Step 5 — Automatic re-rendering (the payoff)
 
-```js
-{
-  fullName: "Ana Perez",
-  image: "https://...",
-  phone: "123456",
-  email: "ana@email.com",
-  program: "Web Dev",
-  graduationYear: 2025,
-  graduated: false
-}
-```
+When setExponent runs:
 
-No guessing.  
-No reading from the screen.  
-Just using state.
+React updates state in App
 
-So…
+App re-renders
 
-```js
-const handleSubmit = (e) => {
-  e.preventDefault(); // Stops browser from refreshing page
+New exponent is passed to:
 
-  // Creates a newStudent object from the info the user typed in
-  const newStudent = {
-    fullName,
-    image,
-    phone,
-    email,
-    program,
-    graduationYear,
-    graduated,
-  };
+Counter
 
-  // Creates a new array by copying students and appending newStudent
-  setStudents([...students, newStudent]);
-};
-```
+All Exponent* components
+
+UI updates everywhere in sync
+
+No manual wiring.
+No listeners.
+No global variables.
+
+Mental model (very important)
 
 Think of it like this:
 
-```js
-[...students, newStudent]
-```
+App = brain
 
-means:
+Counter = remote control
 
-“Take whatever `students` is right now, copy its items into a new array, then add one more item.”
+Exponent* = screens
 
-After that line runs:
+Only the brain stores memory.
+Remotes can send commands.
+Screens only display.
 
-- the old array is forgotten
-- the new array becomes `students`
+## Summary
 
----
-
-### 4️⃣ React then
-
-- re-renders the UI
-- shows the new student in the table
-
----
-
-## Why this is the correct React way
-
-- Inputs update state as the user types
-- Submit just uses state
-- No direct DOM access
-- Predictable, clean, testable
-
----
-
-## One-line summary
-
-`handleSubmit` prevents refresh, creates a student object from state, and adds it to the students list.
-
----
-
-## Application State Diagram
+We lifted the state by moving useState to App.jsx, passing the value down as props (data) to all components that need it. 
